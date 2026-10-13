@@ -6,6 +6,8 @@ import { Post, Rule } from "./types";
 import { FEED_ADDRESS, FIRST_ID, LIVE, REGISTRY_ADDRESS, TIP_AMOUNT, feedAbi, registryAbi } from "./contracts";
 import { monadTestnet } from "./wagmi";
 
+export type Backer = { tipper: string; amount: number; ruleId: number };
+
 // One hook the page uses for everything. Demo mode = fake data in the browser.
 // Live mode = real reads and writes on Monad. The page does not care which.
 export function useTerrace() {
@@ -59,6 +61,25 @@ export function useTerrace() {
   };
   const earnedCache = useRef<Map<string, bigint>>(loadEarned());
   const logsCursor = useRef<bigint | null>(loadCursor());
+
+  // Backers per post, collected from Tipped events going forward.
+  // Creator-only in the UI (rendered on your own profile card); like all chain
+  // data it is technically public to anyone querying the RPC directly.
+  const loadBackers = (): Record<number, Backer[]> => {
+    try {
+      return JSON.parse(localStorage.getItem("terrace-backers") ?? "{}") as Record<number, Backer[]>;
+    } catch {
+      return {};
+    }
+  };
+  const [backers, setBackers] = useState<Record<number, Backer[]>>(loadBackers);
+  const backersRef = useRef<Record<number, Backer[]>>(loadBackers());
+
+  useEffect(() => {
+    try {
+      localStorage.setItem("terrace-backers", JSON.stringify(backersRef.current));
+    } catch {}
+  }, [backers]);
 
   const load = useCallback(async () => {
     if (!LIVE || !client) return;
@@ -144,12 +165,22 @@ export function useTerrace() {
       const tippedEvent = parseAbiItem(
         "event Tipped(uint256 indexed postId, address indexed tipper, uint256 indexed ruleId, uint256 amount)"
       );
-      const absorb = (logs: { args: { ruleId?: bigint; amount?: bigint } }[]) => {
+      const absorb = (logs: { args: { postId?: bigint; tipper?: string; ruleId?: bigint; amount?: bigint } }[]) => {
         for (const log of logs) {
-          const author = authorOf.get(Number(log.args.ruleId ?? BigInt(0)));
+          const postId = Number(log.args.postId ?? BigInt(0));
+          const tipper = String(log.args.tipper ?? "").toLowerCase();
+          const ruleId = Number(log.args.ruleId ?? BigInt(0));
           const amount = log.args.amount ?? BigInt(0);
-          if (!author) continue;
-          earnedCache.current.set(author, (earnedCache.current.get(author) ?? BigInt(0)) + (amount * BigInt(1000)) / BigInt(10000));
+          const author = authorOf.get(ruleId);
+          if (author) {
+            earnedCache.current.set(author, (earnedCache.current.get(author) ?? BigInt(0)) + (amount * BigInt(1000)) / BigInt(10000));
+          }
+          // Backers panel: who tipped which post and how much (newest last, cap 100).
+          if (postId > 0 && tipper) {
+            const list = backersRef.current[postId] ?? [];
+            list.push({ tipper, amount: Number(formatEther(amount)), ruleId });
+            backersRef.current[postId] = list.slice(-100);
+          }
         }
       };
       // 100-block slices stay under every public Monad RPC's getLogs cap.
@@ -232,6 +263,7 @@ export function useTerrace() {
       setPosts(nextPosts);
       setLeaderboard(board);
       setLeaderboardAllTime(allTime);
+      setBackers({ ...backersRef.current });
       setLoadError("");
     } catch (e) {
       // Only shout when there is nothing to show yet. Background refreshes fail quietly
@@ -347,6 +379,7 @@ export function useTerrace() {
     balance,
     leaderboard,
     leaderboardAllTime,
+    backers,
     loading,
     txPending,
     error: error || loadError,

@@ -171,6 +171,14 @@ export default function Home() {
   const myTips = myPosts.reduce((x, p) => x + tipsOn(p), 0);
   const [nick, setNick] = useState("");
   const [myPage, setMyPage] = useState(0);
+  const [openBackers, setOpenBackers] = useState<Set<number>>(new Set()); // collapsed by default
+  const toggleBackers = (id: number) =>
+    setOpenBackers((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
   const pages = Math.max(1, Math.ceil(myPosts.length / PROFILE_PAGE_SIZE));
   const pg = Math.min(myPage, pages - 1);
   const shown = myPosts.slice(pg * PROFILE_PAGE_SIZE, (pg + 1) * PROFILE_PAGE_SIZE);
@@ -544,14 +552,37 @@ export default function Home() {
                 ) : (
                   <>
                   <ul className="mt-2 flex max-h-64 flex-col gap-2 overflow-y-auto pr-1" style={{ scrollbarWidth: "thin" }}>
-                    {shown.map((p) => (
+                    {shown.map((p) => {
+                      const b = t.backers[p.id] ?? [];
+                      const open = openBackers.has(p.id);
+                      return (
                       <li key={p.id} className="rounded-lg px-3 py-2 text-sm" style={{ background: "var(--track)" }}>
                         <p className="leading-snug">{p.text}</p>
                         <div className={`${mono.className} mt-1 text-xs`} style={MUTED}>
                           {ago(p.createdAt)}, {fmt(tipsOn(p))} tipped
                         </div>
+                        {b.length > 0 && (
+                          <button
+                            onClick={() => toggleBackers(p.id)}
+                            aria-expanded={open}
+                            className={`${mono.className} mt-1 text-xs underline`}
+                          >
+                            {b.length} {b.length === 1 ? "backer" : "backers"} {open ? "▾" : "▸"}
+                          </button>
+                        )}
+                        {open && b.length > 0 && (
+                          <ul className="mt-1 flex flex-col gap-1 border-t border-black/10 pt-1">
+                            {b.map((tip, i) => (
+                              <li key={`${tip.tipper}-${i}`} className={`${mono.className} flex justify-between text-xs`}>
+                                <span title={tip.tipper}>{label(tip.tipper)}</span>
+                                <span>{fmt(tip.amount)} MON</span>
+                              </li>
+                            ))}
+                          </ul>
+                        )}
                       </li>
-                    ))}
+                      );
+                    })}
                   </ul>
                   {pages > 1 && (
                     <div className={`${mono.className} mt-3 flex items-center justify-between text-xs`} style={MUTED}>
