@@ -43,6 +43,24 @@ function adjust(w: W, key: keyof W, v: number): W {
   return { ...w, [key]: v, [a]: na, [b]: rest - na } as W;
 }
 
+// Plain-English preview of what a rule's weights actually do, updated as you drag.
+function previewRule(w: W): string {
+  const parts: [string, number][] = [
+    ["freshness", w.r],
+    ["tips", w.t],
+    ["fan backing", w.b],
+  ];
+  const sorted = [...parts].sort((a, b) => b[1] - a[1]);
+  const spread = sorted[0][1] - sorted[2][1];
+  if (spread <= 20) return "Balanced: new, tipped and widely-backed posts all get a fair shot.";
+  if (sorted[0][1] >= 50) {
+    if (sorted[0][0] === "freshness") return "Mostly freshness: brand-new posts start on top, but heavy tipping can still overtake them.";
+    if (sorted[0][0] === "tips") return "Mostly tips: the most-tipped posts lead, however old they are.";
+    return "Mostly fan backing: posts tipped by lots of different people rise to the top.";
+  }
+  return `A mix led by ${sorted[0][0]}, with ${sorted[1][0]} close behind.`;
+}
+
 function Bar({ r, t, b, dark }: { r: number; t: number; b: number; dark?: boolean }) {
   return (
     <div className="flex h-2 w-full overflow-hidden rounded-full" style={{ background: dark ? "var(--track-inv)" : "var(--track)" }}>
@@ -118,6 +136,21 @@ export default function Home() {
   const [name, setName] = useState("");
   const [w, setW] = useState<W>({ r: 34, t: 33, b: 33 });
   const [published, setPublished] = useState("");
+
+  // One-time "how ranking works" strip: shown until dismissed, remembered per browser.
+  const [showHow, setShowHow] = useState(() => {
+    try {
+      return localStorage.getItem("terrace-how") !== "seen";
+    } catch {
+      return true;
+    }
+  });
+  const dismissHow = () => {
+    try {
+      localStorage.setItem("terrace-how", "seen");
+    } catch {}
+    setShowHow(false);
+  };
 
   useEffect(() => setMounted(true), []);
 
@@ -391,7 +424,34 @@ export default function Home() {
 
       <main className="mx-auto grid max-w-6xl grid-cols-[minmax(0,1fr)] gap-8 px-5 pb-8 pt-5 sm:px-8 lg:grid-cols-[minmax(0,1fr)_340px]">
         <section className={`min-w-0${tab === "feed" ? "" : " hidden lg:block"}`}>
-          <h2 className={`${display.className} mb-2 text-3xl font-bold`}>Pick a ranking rule</h2>
+          <div className="mb-2 flex items-center gap-2">
+            <h2 className={`${display.className} text-3xl font-bold`}>Pick a ranking rule</h2>
+            <button
+              onClick={() => setShowHow(true)}
+              aria-label="What do these rules mean?"
+              title="What do these rules mean?"
+              className="btn btn-flat"
+              style={{ width: "1.75rem", height: "1.75rem", padding: 0, borderRadius: 999, fontWeight: 700 }}
+            >
+              ?
+            </button>
+          </div>
+          {showHow && (
+            <div className="box mb-4 p-4" role="note" aria-label="How ranking works">
+              <div className="text-sm font-semibold">How ranking works</div>
+              <ul className="mt-1 flex flex-col gap-1 text-sm">
+                <li><b>Freshness:</b> newer posts start higher.</li>
+                <li><b>Tips:</b> more MON tipped pushes a post up.</li>
+                <li><b>Fan backing:</b> tips from many different people beat one big tip.</li>
+              </ul>
+              <p className={`${mono.className} mt-2 text-xs`} style={MUTED}>
+                Every tip splits 90% to the post author, 10% to the rule author.
+              </p>
+              <button onClick={dismissHow} className="btn btn-y btn-flat mt-3">
+                Got it
+              </button>
+            </div>
+          )}
           <div className="relative">
             <div className="overflow-hidden">
           <div ref={tabsRef} role="tablist" className="scroll-x -mb-6 flex snap-x gap-3 overflow-x-auto pb-10 pr-3 pt-1">
@@ -719,6 +779,9 @@ export default function Home() {
               <Bar r={w.r} t={w.t} b={w.b} />
               <div className={`${mono.className} mt-1 text-xs`} style={MUTED}>
                 The three always add up to 100%.
+              </div>
+              <div className="mt-2 text-sm font-medium" aria-live="polite">
+                {previewRule(w)}
               </div>
             </div>
             <button onClick={publish} disabled={!name.trim() || t.txPending} className="btn btn-y mt-4 w-full">

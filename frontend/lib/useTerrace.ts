@@ -65,9 +65,20 @@ export function useTerrace() {
   // Backers per post, collected from Tipped events going forward.
   // Creator-only in the UI (rendered on your own profile card); like all chain
   // data it is technically public to anyone querying the RPC directly.
+  // Tips are grouped per tipper: one user tipping 5 x 0.01 shows as one backer of 0.05.
+  const mergeBackers = (list: Backer[]): Backer[] => {
+    const byTipper = new Map<string, Backer>();
+    for (const b of list) {
+      const prev = byTipper.get(b.tipper);
+      if (prev) prev.amount += b.amount;
+      else byTipper.set(b.tipper, { ...b });
+    }
+    return [...byTipper.values()].slice(-100);
+  };
   const loadBackers = (): Record<number, Backer[]> => {
     try {
-      return JSON.parse(localStorage.getItem("terrace-backers") ?? "{}") as Record<number, Backer[]>;
+      const raw = JSON.parse(localStorage.getItem("terrace-backers") ?? "{}") as Record<number, Backer[]>;
+      return Object.fromEntries(Object.entries(raw).map(([k, v]) => [Number(k), mergeBackers(v)]));
     } catch {
       return {};
     }
@@ -175,11 +186,15 @@ export function useTerrace() {
           if (author) {
             earnedCache.current.set(author, (earnedCache.current.get(author) ?? BigInt(0)) + (amount * BigInt(1000)) / BigInt(10000));
           }
-          // Backers panel: who tipped which post and how much (newest last, cap 100).
+          // Backers panel: who tipped which post and how much, grouped per tipper
+          // (newest first, cap 100). Note backerCount onchain already counts
+          // unique tippers the same way.
           if (postId > 0 && tipper) {
             const list = backersRef.current[postId] ?? [];
-            list.push({ tipper, amount: Number(formatEther(amount)), ruleId });
-            backersRef.current[postId] = list.slice(-100);
+            const prev = list.find((b) => b.tipper === tipper);
+            if (prev) prev.amount += Number(formatEther(amount));
+            else list.unshift({ tipper, amount: Number(formatEther(amount)), ruleId });
+            backersRef.current[postId] = list.slice(0, 100);
           }
         }
       };
