@@ -4,7 +4,7 @@ import Providers from "./providers";
 
 export const metadata: Metadata = {
   title: "Terrace",
-  description: "Football talk, ranked by rules the fans write.",
+  description: "Open talk, ranked by rules the community writes.",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

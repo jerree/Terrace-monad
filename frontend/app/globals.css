@@ -1,26 +1,220 @@
 @import "tailwindcss";
 
+/* Two Monad themes: light (default) and dark. Switch with the swatches under the TERRACE title. */
+:root,
+[data-theme="monad"] {
+  color-scheme: light;
+  --paper: #ece8f6;
+  --card: #f8f6fd;
+  --field: #ffffff;
+  --ink: #1b1233; /* text */
+  --edge: #1b1233; /* outlines */
+  --shadow: #1b1233; /* hard offset shadows */
+  --muted: rgba(27, 18, 51, 0.7);
+  --track: rgba(0, 0, 0, 0.1);
+  --track-inv: rgba(255, 255, 255, 0.2);
+  --pitch: #3b1d8f; /* masthead stripe, earnings panel */
+  --pitch2: #4a2aa8;
+  --stripe: repeating-linear-gradient(90deg, var(--pitch) 0 36px, var(--pitch2) 36px 72px);
+  --onpitch: #f4f1ff;
+  --focus: #3b1d8f; /* focus ring, highlights */
+  --accent: #b8a6ff; /* primary buttons */
+  --on-accent: #1b1233;
+}
+[data-theme="monad-dark"] {
+  color-scheme: dark;
+  --paper: #0f0a1e;
+  --card: #1a1230;
+  --field: #0f0a1e;
+  --ink: #eeeafb;
+  --edge: #4b3c7a;
+  --shadow: #000000;
+  --muted: rgba(238, 234, 251, 0.7);
+  --track: rgba(255, 255, 255, 0.12);
+  --track-inv: rgba(0, 0, 0, 0.15);
+  --pitch: #200052;
+  --pitch2: #2c0a6e;
+  --stripe: #836ef9; /* one solid purple line */
+  --onpitch: #f4f1ff;
+  --focus: #836ef9;
+  --accent: #836ef9;
+  --on-accent: #0f0a1e;
+}
+
+/* Bar colours stay the same in every theme so the legend always means the same thing */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  --light: #f5c400; /* recency */
+  --tips: #1f9d63; /* tips */
+  --fans: #3d6fd8; /* different backers */
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  -webkit-tap-highlight-color: transparent;
+  background: var(--paper);
+  color: var(--ink);
+}
+::selection {
+  background: var(--accent);
+  color: var(--on-accent);
+}
+:focus-visible {
+  outline: 3px solid var(--focus);
+  outline-offset: 2px;
+}
+
+button:not(:disabled) {
+  cursor: pointer;
+}
+.swatch {
+  transition: transform 0.12s;
+}
+.swatch:hover {
+  transform: scale(1.15);
+}
+
+/* Rule tabs: no native scrollbar, round arrow buttons scroll them instead */
+.scroll-x {
+  scrollbar-width: none;
+}
+.scroll-x::-webkit-scrollbar {
+  display: none;
+}
+
+/* Tab arrows stay quiet until you point at them */
+.arrow {
+  opacity: 0.5;
+  transition: opacity 0.15s;
+}
+.arrow:hover,
+.arrow:focus-visible {
+  opacity: 1;
+}
+@media (prefers-reduced-motion: reduce) {
+  .arrow {
+    transition: none;
+  }
+}
+
+.box {
+  border-radius: 16px;
+  border: 1px solid var(--edge);
+  background: var(--card);
+}
+.btn {
+  border-radius: 12px;
+  border: 1.5px solid var(--edge);
+  background: var(--card);
+  color: var(--ink);
+  font-weight: 600;
+  padding: 0.4rem 0.9rem;
+  box-shadow: 3px 3px 0 var(--shadow);
+  transition: transform 0.08s, box-shadow 0.08s;
+}
+.btn:hover:not(:disabled) {
+  transform: translate(-1px, -1px);
+  box-shadow: 4px 4px 0 var(--shadow);
+}
+.btn:active:not(:disabled) {
+  transform: translate(2px, 2px);
+  box-shadow: 1px 1px 0 var(--shadow);
+}
+.btn:disabled {
+  opacity: 0.45;
+  box-shadow: none;
+  cursor: not-allowed;
+}
+/* Flat buttons: for the small, repeated ones (Tip, arrows, page buttons) so only the main actions have the hard shadow */
+.btn-flat {
+  box-shadow: none;
+}
+.btn-flat:hover:not(:disabled) {
+  transform: none;
+  box-shadow: none;
+  filter: brightness(1.08);
+}
+.btn-flat:active:not(:disabled) {
+  transform: translateY(1px);
+  box-shadow: none;
+}
+.btn-y {
+  background: var(--accent);
+  color: var(--on-accent);
+}
+.field {
+  border-radius: 10px;
+  border: 1px solid var(--edge);
+  background: var(--field);
+  color: var(--ink);
+  padding: 0.5rem 0.7rem;
+  width: 100%;
+}
+.grass {
+  height: 10px;
+  background: var(--stripe);
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.rise {
+  animation: rise 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) backwards;
+}
+@media (prefers-reduced-motion: reduce) {
+  .rise {
+    animation: none;
+  }
+  .btn {
+    transition: none;
+  }
+}
+
+/* Preloader: full-screen splash, logo bounces up, then the whole thing fades */
+.preload-wrap {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: grid;
+  place-items: center;
+  align-content: center;
+  gap: 10px;
+  background: var(--paper);
+  transition: opacity 0.3s ease;
+}
+.preload-wrap[data-leaving="true"] {
+  opacity: 0;
+  pointer-events: none;
+}
+.preload-logo {
+  height: 72px;
+  width: 72px;
+  animation: preload-bounce 0.85s cubic-bezier(0.2, 0.8, 0.2, 1) infinite alternate;
+}
+.preload-word {
+  font-weight: 900;
+  letter-spacing: 0.35em;
+  font-size: 12px;
+  color: var(--muted);
+}
+@keyframes preload-bounce {
+  from {
+    transform: translateY(10px) scale(0.96);
+  }
+  to {
+    transform: translateY(-12px) scale(1);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .preload-logo {
+    animation: none;
+  }
+  .preload-wrap {
+    transition: none;
+  }
 }

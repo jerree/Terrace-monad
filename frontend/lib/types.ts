@@ -23,4 +23,5 @@ export type RankedPost = Post & {
   totalTips: number;
   backers: number;
   score: number;
+  parts: { r: number; t: number; b: number }; // what each ingredient added to the score
 };

@@ -14,11 +14,14 @@ export function rankPosts(posts: Post[], rule: Rule): RankedPost[] {
   return stats
     .map((s) => {
       const recency = 1 / (1 + s.ageHours / 12); // 1 = brand new, fades over time
-      const score =
-        (rule.wRecency * recency +
-          rule.wTips * (s.totalTips / maxTips) +
-          rule.wBackers * (s.backers / maxBackers)) / 10000;
-      return { ...s.p, totalTips: s.totalTips, backers: s.backers, score };
+      // How much each ingredient contributed to the score (they add up to the score)
+      const parts = {
+        r: (rule.wRecency * recency) / 10000,
+        t: (rule.wTips * (s.totalTips / maxTips)) / 10000,
+        b: (rule.wBackers * (s.backers / maxBackers)) / 10000,
+      };
+      const score = parts.r + parts.t + parts.b;
+      return { ...s.p, totalTips: s.totalTips, backers: s.backers, score, parts };
     })
     .sort((a, b) => b.score - a.score);
 }
