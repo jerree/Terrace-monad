@@ -542,7 +542,7 @@ export default function Home() {
           )}
         </section>
 
-        <aside className="flex flex-col gap-6 lg:mt-11 lg:self-start">
+        <aside className="flex flex-col gap-6 lg:sticky lg:top-6 lg:mt-11 lg:self-start">
           <section className={`box p-4${tab === "profile" ? "" : " hidden lg:block"}`}>
             <h2 className={`${display.className} text-2xl font-bold`}>Your profile</h2>
             {t.live && !me ? (
