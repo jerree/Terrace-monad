@@ -56,7 +56,7 @@ function Bar({ r, t, b, dark }: { r: number; t: number; b: number; dark?: boolea
 const arrowStyle = (side: "left" | "right"): CSSProperties => ({
   position: "absolute",
   top: 37,
-  [side]: -12,
+  [side]: 4, // inside the container — outside (-12) caused sideways scroll on phones
   transform: "translateY(-50%)",
   width: 24,
   height: 24,
@@ -107,6 +107,9 @@ export default function Home() {
   const t = useTerrace();
   const { rules, posts } = t;
   const [ruleId, setRuleId] = useState<number | null>(null);
+  // Phones only: the sidebar cards sit below all posts, so mobile gets a tab
+  // switcher (Feed | Profile | Earnings | Rules). Desktop ignores this state.
+  const [tab, setTab] = useState<"feed" | "profile" | "earn" | "rules">("feed");
   const rule = rules.find((r) => r.id === ruleId) ?? rules[0];
   const ranked = useMemo(() => (rule ? rankPosts(posts, rule) : []), [posts, rule]);
   const topScore = ranked[0]?.score || 1;
@@ -362,8 +365,32 @@ export default function Home() {
         </div>
       </div>
 
-      <main className="mx-auto grid max-w-6xl gap-8 px-5 pb-8 pt-5 sm:px-8 lg:grid-cols-[minmax(0,1fr)_340px]">
-        <section>
+      <div className="mx-auto max-w-6xl px-5 pt-4 sm:px-8 lg:hidden">
+        <div className="box flex p-1" role="tablist" aria-label="Sections">
+          {(
+            [
+              ["feed", "Feed"],
+              ["profile", "Profile"],
+              ["earn", "Earnings"],
+              ["rules", "Rules"],
+            ] as const
+          ).map(([id, name]) => (
+            <button
+              key={id}
+              role="tab"
+              aria-selected={tab === id}
+              onClick={() => setTab(id)}
+              className="flex-1 rounded-lg px-2 py-1.5 text-sm font-semibold"
+              style={tab === id ? { background: "var(--ink)", color: "var(--paper)" } : undefined}
+            >
+              {name}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <main className="mx-auto grid max-w-6xl grid-cols-[minmax(0,1fr)] gap-8 px-5 pb-8 pt-5 sm:px-8 lg:grid-cols-[minmax(0,1fr)_340px]">
+        <section className={`min-w-0${tab === "feed" ? "" : " hidden lg:block"}`}>
           <h2 className={`${display.className} mb-2 text-3xl font-bold`}>Pick a ranking rule</h2>
           <div className="relative">
             <div className="overflow-hidden">
@@ -484,8 +511,8 @@ export default function Home() {
                     </div>
                     <Move d={moves.get(p.id) ?? 0} />
                   </div>
-                  <div className="min-w-0 flex-1">
-                    <p className="text-[17px] leading-snug">{p.text}</p>
+                  <div className="min-w-0 flex-1" style={{ minWidth: 0 }}>
+                    <p className="break-words text-[17px] leading-snug">{p.text}</p>
                     <div
                       className="mt-3 h-2 w-full overflow-hidden rounded-full"
                       style={{ background: "var(--track)" }}
@@ -497,7 +524,7 @@ export default function Home() {
                         <div style={{ flex: p.parts.b, background: COL.b }} />
                       </div>
                     </div>
-                    <div className={`${mono.className} mt-2 flex flex-wrap items-center gap-x-4 gap-y-2 text-xs`} style={MUTED}>
+                    <div className={`${mono.className} mt-2 flex min-w-0 flex-wrap items-center gap-x-4 gap-y-2 text-xs`} style={MUTED}>
                       <b title={p.author} style={{ color: "var(--ink)" }}>{label(p.author)}</b>
                       <span>{ago(p.createdAt)}</span>
                       <span>{p.totalTips} tipped</span>
@@ -516,7 +543,7 @@ export default function Home() {
         </section>
 
         <aside className="flex flex-col gap-6 lg:mt-11 lg:self-start">
-          <section className="box p-4">
+          <section className={`box p-4${tab === "profile" ? "" : " hidden lg:block"}`}>
             <h2 className={`${display.className} text-2xl font-bold`}>Your profile</h2>
             {t.live && !me ? (
               <p className="mt-1 text-sm" style={MUTED}>
@@ -604,13 +631,13 @@ export default function Home() {
           </section>
 
           <section
-            className="p-4"
+            className={`${tab === "earn" ? "" : "hidden lg:block"} p-4`}
             style={{ background: "var(--pitch)", color: "var(--onpitch)", border: "1px solid var(--edge)", borderRadius: 16 }}
           >
             <div className={`${mono.className} text-xs opacity-80`}>Your earnings</div>
             <div className="mt-1 flex items-end justify-between gap-3">
               <div>
-                <div className={`${display.className} text-7xl font-black leading-[0.85]`} style={{ color: "var(--accent)" }}>
+                <div className={`${display.className} text-6xl font-black leading-[0.85] sm:text-7xl`} style={{ color: "var(--accent)" }}>
                   {fmt(balance)}
                 </div>
                 <div className={`${mono.className} mt-1 text-[10px] opacity-80`}>ready to withdraw</div>
@@ -650,7 +677,7 @@ export default function Home() {
           </section>
 
 
-          <section className="box p-4">
+          <section className={`box p-4${tab === "rules" ? "" : " hidden lg:block"}`}>
             <h2 className={`${display.className} text-2xl font-bold`}>Write your own rule</h2>
             <p className="mb-3 mt-1 text-sm" style={MUTED}>
               Decide what counts. If people use your rule, you earn 10% of their tips.

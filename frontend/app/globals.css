@@ -52,6 +52,7 @@ body {
   -webkit-tap-highlight-color: transparent;
   background: var(--paper);
   color: var(--ink);
+  overflow-x: clip; /* stray absolute elements (tab arrows) must never cause sideways scroll on phones */
 }
 ::selection {
   background: var(--accent);
