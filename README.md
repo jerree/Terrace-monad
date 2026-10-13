@@ -106,7 +106,7 @@ TODO: wallets that connected, posts, tips and rules published, with explorer lin
 ## Demo
 
 - Demo video: TODO
-- Live app: TODO
+- Live app: https://terrace--monad.vercel.app/
 
 ## AI tools disclosure
 
