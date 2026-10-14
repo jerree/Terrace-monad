@@ -94,7 +94,7 @@ We start with football fan communities that already live in crypto circles, beca
 
 ## Traction
 
-TODO: wallets that connected, posts, tips and rules published, with explorer links and screenshots from our test group.
+Different wallets were connected, posts, tips and rules published.[Terrace test group on WhatsApp](testing-screenshots/testing1.jpg)(testing-screenshots/testing2.jpg)(testing-screenshots/testing3.jpg)
 
 ## Known limits
 
@@ -105,14 +105,15 @@ TODO: wallets that connected, posts, tips and rules published, with explorer lin
 
 ## Demo
 
-- Demo video: TODO
+- Demo video: https://www.loom.com/share/77b596ce49bb4140916e3f8f9c2510f5
+- Pitch video: https://www.loom.com/share/c258f60a45504e30bcef623cb994f9ec
 - Live app: https://terrace--monad.vercel.app/
 
 ## AI tools disclosure
 
-AI coding tools were used in this project: Claude (Anthropic) and other AI coding assistants helped plan the project, write and debug code, and draft this documentation.
+AI coding tools were used in this project: Claude (Anthropic) and other AI coding assistants helped plan the project, write and debug code.
 
 ## Team
 
-- TODO: name and role (frontend)
+- Jerry: frontend
 - David: smart contracts
